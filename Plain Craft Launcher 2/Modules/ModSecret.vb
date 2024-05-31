@@ -9,7 +9,7 @@ Friend Module ModSecret
 #Region "杂项"
 
     '在开源内容的注册表键与普通内容的注册表键隔离
-    Public Const RegFolder As String = "PCLDebug"
+    Public Const RegFolder As String = "PCLDebug2"
 
     Friend Sub SecretOnApplicationStart()
         '提升 UI 线程优先级
