@@ -1,14 +1,14 @@
 # 定义工作流名称
-name: 编译 PCL
+name: Build PCL
 
-# 定义触发器
+# 定义触发条件
 on:
-  # 提交内容修改代码或编辑工作流时
+  # 提交内容修改代码或编辑工作流文件时
   push:
     paths:
       - 'Plain Craft Launcher 2/**'
       - '.github/workflows/**'
-  # 新的PR修改代码或编辑工作流时
+  # 新的 PR 修改代码或编辑工作流文件时
   pull_request:
     paths:
       - 'Plain Craft Launcher 2/**'
@@ -18,7 +18,7 @@ on:
 
 # 定义工作列表
 jobs:
-  # 唯一的工作：build
+  # 唯一的工作：`build`
 
   build:
     strategy:
@@ -27,48 +27,44 @@ jobs:
         # 五个编译选项
         configuration: [Debug, Release, Snapshot, BETA, ReleaseUpdate]
 
-    # 显然，只有Windows才能构建.NET Framework程序
+    # 显然，只有 Windows 才能构建 .NET Framework 程序
     runs-on: windows-latest
 
     # 定义步骤列表
     steps:
 
-    - name: 签出仓库
-      # 调用actions/checkout仓库的调用预设工作流
+    # 签出仓库
+    - name: Checkout
+      # 调用 actions/checkout 仓库的调用预设工作流
       uses: actions/checkout@v4
       # 调用参数
       with:
         # 只签出第一层
         fetch-depth: 0
 
-    - name: 导出提交描述
+    # 导出提交散列值的短版本
+    - name: Set commit hash short version
       shell: bash
       run: |
-          Describe=`git describe --tags`
-          echo "Describe=$Describe" >> $GITHUB_ENV
-      continue-on-error: true
+          ver_short=`git rev-parse --short HEAD`
+          echo "VERSION=$ver_short" >> $GITHUB_ENV
 
-    # 在极少数情况下，可能没有可用的提交描述。详见 https://github.com/Silverteal/PCL2/actions/runs/9518525229/job/26239628548
-    - name: 导出备用描述
-      shell: bash
-      run: |
-          echo "Describe=unknown" >> $GITHUB_ENV
-      if: ${{ failure() }}
-
-    - name: 配置 MSBuild
+    # 配置 MSBuild
+    - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
       with:
-        # 生成工具使用64位架构
+        # 生成工具使用 64 位架构
         msbuild-architecture: x64
 
-    - name: 编译源代码
+    # 编译源代码
+    - name: Build
       run: msbuild "Plain Craft Launcher 2\Plain Craft Launcher 2.vbproj" -p:Configuration=${{ matrix.configuration }}
 
-    - name: 打包并上传编译产物
+    # 打包并上传编译产物
+    - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        # 文件名格式示例：pcl2-autobuild-2.7.4-37-a0b1c2d3-Snapshot.zip
-        # 其中2.7.4是仓库最新tag，37是自上一个标签的提交数，a0b1c2d3是最后一次提交哈希
-        name: pcl2-autobuild-${{ env.Describe }}-${{ matrix.configuration }}
+        # 文件名格式示例：`PCL2_ga0b1c2d_Snapshot.zip`
+        # `ga0b1c2d` 是提交散列值的短版本 (`g`+前七位)；`Snapshot` 为上文中的「编译选项」
+        name: PCL2_g${{ env.VERSION }}_${{ matrix.configuration }}
         path: Plain Craft Launcher 2\obj\${{ matrix.configuration }}\Plain Craft Launcher 2.exe
-  
